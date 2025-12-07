@@ -1,5 +1,5 @@
-from utils import get_secure_input
-from api_client import post, delete, get
+from client.utils import get_secure_input
+from client.api_client import post, delete, get
 
 def documents_menu(sess):
     while True:
