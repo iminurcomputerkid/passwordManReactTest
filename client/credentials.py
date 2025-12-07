@@ -1,5 +1,5 @@
-from client.utils import get_secure_input, generate_password
-from client.api_client import post, delete, get
+from utils import get_secure_input, generate_password
+from api_client import post, delete, get
 
 def credentials_menu(sess):
     while True:

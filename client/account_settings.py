@@ -1,5 +1,5 @@
-from client.utils import get_secure_input
-from client.api_client import post
+from utils import get_secure_input
+from api_client import post
 from urllib.parse import quote, urlencode
 import qrcode  # pip install qrcode
 

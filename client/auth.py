@@ -1,5 +1,5 @@
-from client.utils import get_secure_input, prompt_totp_visible
-from client.api_client import post, set_session_token
+from utils import get_secure_input, prompt_totp_visible
+from api_client import post, set_session_token
 
 
 class Session:

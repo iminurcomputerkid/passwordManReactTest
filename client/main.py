@@ -1,7 +1,7 @@
-from client.auth import login, register_account
-from client.credentials import credentials_menu
-from client.documents import documents_menu
-from client.account_settings import account_settings_menu
+from auth import login, register_account
+from credentials import credentials_menu
+from documents import documents_menu
+from account_settings import account_settings_menu
 
 def main_menu():
     while True:
