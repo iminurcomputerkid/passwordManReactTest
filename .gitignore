@@ -1,4 +1,7 @@
 server/
 client/.env
 client/__pycache__/
+*.pyc
+.venv/
+venv/
 
