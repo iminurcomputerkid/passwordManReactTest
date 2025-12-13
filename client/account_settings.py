@@ -4,7 +4,7 @@ from urllib.parse import quote, urlencode
 import qrcode  # pip install qrcode
 
 ##FOR PRINTING OUT QR CODE
-def otpauth_uri(secret_b32: str, account: str, issuer: str = "P1PasswordManager",
+def otpauth_uri(secret_b32: str, account: str, issuer: str = "passwordManager",
                 digits: int = 6, period: int = 30, algorithm: str = "SHA1") -> str:
     """Build a standard otpauth:// URI that authenticator apps understand."""
     label = quote(f"{issuer}:{account}")
