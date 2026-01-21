@@ -15,7 +15,11 @@ export default function StrengthBar({ password }) {
           <span
             key={idx}
             className={`strength-segment ${active ? "active" : ""}`}
-            style={active ? { background: `hsl(${color})` } : undefined}
+            style={
+              active
+                ? { background: `hsl(${color})`, boxShadow: `0 4px 12px hsl(${color} / 0.35)` }
+                : undefined
+            }
           />
         ))}
       </div>

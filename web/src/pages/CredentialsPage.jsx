@@ -1,16 +1,16 @@
 import { useState } from "react";
 import { apiDelete, apiGet, apiPost } from "../api";
 import { generatePassword } from "../utils/password";
-import { KeyRound, List, Search, Trash2, Sparkles } from "lucide-react";
+import { KeyRound, List, Trash2, Sparkles } from "lucide-react";
 import StrengthBar from "../components/StrengthBar";
 
 export default function CredentialsPage() {
   const [addForm, setAddForm] = useState({ site: "", s_username: "", s_password: "" });
   const [addStatus, setAddStatus] = useState(null);
 
-  const [viewSite, setViewSite] = useState("");
   const [viewResult, setViewResult] = useState(null);
   const [viewStatus, setViewStatus] = useState(null);
+  const [viewSite, setViewSite] = useState("");
 
   const [sites, setSites] = useState([]);
   const [sitesStatus, setSitesStatus] = useState(null);
@@ -20,6 +20,35 @@ export default function CredentialsPage() {
 
   const handleAddChange = (field) => (e) => setAddForm({ ...addForm, [field]: e.target.value });
 
+  function normalizeList(res) {
+    if (!res) return [];
+    if (Array.isArray(res)) return res;
+    if (typeof res === "string") {
+      const cleaned = res.replace(/^\s*Sites:\s*/i, "").trim();
+      const withoutBrackets = cleaned.replace(/^\[/, "").replace(/\]$/, "");
+      const splitByComma = withoutBrackets
+        .split(/[\n,]+/)
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .map((value) => value.replace(/^['"]|['"]$/g, ""));
+      if (splitByComma.length > 1) return splitByComma;
+      const splitBySpace = withoutBrackets
+        .split(/\s+/)
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .map((value) => value.replace(/^['"]|['"]$/g, ""));
+      return splitBySpace.length > 1 ? splitBySpace : [withoutBrackets].filter(Boolean);
+    }
+    if (typeof res === "object") {
+      const values = Object.values(res).flatMap((value) => (Array.isArray(value) ? value : [value]));
+      if (values.length === 1 && typeof values[0] === "string") {
+        return normalizeList(values[0]);
+      }
+      return values.map((value) => (typeof value === "string" ? value : JSON.stringify(value)));
+    }
+    return [];
+  }
+
   async function handleAdd(e) {
     e.preventDefault();
     setAddStatus(null);
@@ -27,18 +56,19 @@ export default function CredentialsPage() {
       const res = await apiPost("/vault/site", addForm);
       setAddStatus({ type: "success", message: "Stored credentials." });
       if (res) setAddStatus({ type: "success", message: JSON.stringify(res) });
+      await handleListSites();
     } catch (err) {
       setAddStatus({ type: "error", message: err.message || "Failed to store credentials" });
     }
   }
 
-  async function handleView(e) {
-    e.preventDefault();
+  async function handleView(site) {
     setViewStatus(null);
     setViewResult(null);
     try {
-      const res = await apiGet(`/vault/site/${encodeURIComponent(viewSite)}`);
+      const res = await apiGet(`/vault/site/${encodeURIComponent(site)}`);
       setViewResult(res);
+      setViewSite(site);
     } catch (err) {
       setViewStatus({ type: "error", message: err.message || "Lookup failed" });
     }
@@ -48,8 +78,9 @@ export default function CredentialsPage() {
     setSitesStatus(null);
     try {
       const res = await apiGet("/vault/sites");
-      setSites(Array.isArray(res) ? res : Object.values(res || {}));
-      if (!res || (Array.isArray(res) && res.length === 0)) {
+      const normalized = normalizeList(res);
+      setSites(normalized);
+      if (normalized.length === 0) {
         setSitesStatus({ type: "warning", message: "No sites stored yet." });
       }
     } catch (err) {
@@ -65,6 +96,7 @@ export default function CredentialsPage() {
     try {
       const res = await apiDelete("/vault/site", deleteForm);
       setDeleteStatus({ type: "success", message: res?.message || "Deleted." });
+      await handleListSites();
     } catch (err) {
       setDeleteStatus({ type: "error", message: err.message || "Delete failed" });
     }
@@ -122,26 +154,32 @@ export default function CredentialsPage() {
       <div className="card fade">
         <div className="card-header">
           <div className="icon-box">
-            <Search size={18} />
+            <List size={18} />
           </div>
           <div>
-            <h2 className="card-title">View credentials</h2>
-            <p className="card-subtitle">Fetch a stored login by site</p>
+            <h2 className="card-title">List sites</h2>
+            <p className="card-subtitle">Click a site to view credentials</p>
           </div>
         </div>
-        <form className="form" onSubmit={handleView}>
-          <label>
-            Site
-            <input required value={viewSite} onChange={(e) => setViewSite(e.target.value)} />
-          </label>
-          <button className="btn" type="submit">
-            Fetch
-          </button>
-        </form>
+        <button className="btn" onClick={handleListSites}>
+          Refresh list
+        </button>
+        {sitesStatus && <div className={`alert ${sitesStatus.type || ""}`}>{sitesStatus.message}</div>}
+        {sites && sites.length > 0 && (
+          <ul className="tag-list" style={{ marginTop: 12 }}>
+            {sites.map((site) => (
+              <li key={site}>
+                <button className="tag-button" type="button" onClick={() => handleView(site)}>
+                  {site}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
         {viewResult && (
-          <div className="result">
+          <div className="result" style={{ marginTop: 12 }}>
             <div>
-              <strong>Site:</strong> {viewResult.site}
+              <strong>Site:</strong> {viewResult.site || viewSite}
             </div>
             <div>
               <strong>Username:</strong> {viewResult.s_username}
@@ -152,29 +190,6 @@ export default function CredentialsPage() {
           </div>
         )}
         {viewStatus && <div className={`alert ${viewStatus.type || ""}`}>{viewStatus.message}</div>}
-      </div>
-
-      <div className="card fade">
-        <div className="card-header">
-          <div className="icon-box">
-            <List size={18} />
-          </div>
-          <div>
-            <h2 className="card-title">List sites</h2>
-            <p className="card-subtitle">All stored sites for quick access</p>
-          </div>
-        </div>
-        <button className="btn" onClick={handleListSites}>
-          Refresh list
-        </button>
-        {sitesStatus && <div className={`alert ${sitesStatus.type || ""}`}>{sitesStatus.message}</div>}
-        {sites && sites.length > 0 && (
-          <ul className="tag-list" style={{ marginTop: 12 }}>
-            {sites.map((site) => (
-              <li key={site}>{site}</li>
-            ))}
-          </ul>
-        )}
       </div>
 
       <div className="card fade">

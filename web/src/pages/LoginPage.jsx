@@ -139,7 +139,7 @@ export default function LoginPage() {
           </div>
         </div>
         <ul className="tag-list">
-          <li>Step 1: Username + master password</li>
+          <li>Step 1: Enter username + master password</li>
           <li>Step 2: Enter 2FA if the server requests it</li>
           <li>Step 3: Prompt for recovery PIN if too many bad attempts</li>
         </ul>
